@@ -133,7 +133,6 @@ void enumerateInstalledApplications(JsonBuilder& builder) {
 }
 
 
-
 //need to add HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall
 //need to add Microsoft Store (UWP / MSIX) apps using powershell Get-AppxPackage
 // Drivers and kernel components: HKLM\SYSTEM\CurrentControlSet\Services
