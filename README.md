@@ -60,7 +60,8 @@ mabat/
 │   ├── inventory.h
 │   ├── json_builder.cpp
 │   ├── json_builder.h
-│   └── portable_scanner.cpp   (planned)
+|   ├── portable_scanner.h
+│   └── portable_scanner.cpp
 │
 ├── CMakeLists.txt
 ├── README.md
