@@ -1,0 +1,41 @@
+{
+  "generatedBy": "Local Windows Execution Surface Inventory Engine",
+  "entries": [
+    {
+      "name": "Contoso Agent",
+      "type": "Win32",
+      "scope": "per-machine",
+      "source": "registry",
+      "userSID": "N/A",
+      "metadata": {
+        "path": "C:\\Program Files\\Contoso\\agent.exe",
+        "publisher": "Contoso Ltd",
+        "displayVersion": "4.2.1",
+        "registryPath": "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\ContosoAgent"
+      }
+    },
+    {
+      "name": "FabrikamTool",
+      "type": "Portable",
+      "scope": "per-machine",
+      "source": "filesystem",
+      "userSID": "N/A",
+      "metadata": {
+        "path": "C:\\Program Files\\Fabrikam\\FabrikamTool.exe",
+        "extension": ".exe"
+      }
+    },
+    {
+      "name": "Tailspin.App_1.0.0.0_x64__8wekyb3d8bbwe",
+      "type": "UWP",
+      "scope": "per-machine",
+      "source": "os_catalog",
+      "userSID": "N/A",
+      "metadata": {
+        "path": "C:\\Program Files\\WindowsApps\\Tailspin.App_1.0.0.0_x64__8wekyb3d8bbwe",
+        "catalog": "appx",
+        "registryPath": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Appx\\AppxAllUserStore\\Applications\\Tailspin.App_1.0.0.0_x64__8wekyb3d8bbwe"
+      }
+    }
+  ]
+}

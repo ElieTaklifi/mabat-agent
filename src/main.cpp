@@ -1,24 +1,41 @@
+#include <exception>
 #include <iostream>
+#include <memory>
+#include <vector>
 
-#include "inventory.h"
-#include "json_builder.h"
-#include "portable_scanner.h"
-#include "uwp_scanner.h"
+#include "filesystem_scanner.h"
+#include "idiscovery_scanner.h"
+#include "json_exporter.h"
+#include "normalizer.h"
+#include "os_catalog_scanner.h"
+#include "persistence_scanner.h"
+#include "registry_scanner.h"
 
 int main() {
-    JsonBuilder builder;
+    try {
+        std::vector<std::unique_ptr<IDiscoveryScanner>> scanners;
+        scanners.push_back(std::make_unique<RegistryScanner>());
+        scanners.push_back(std::make_unique<FilesystemScanner>());
+        scanners.push_back(std::make_unique<OSCatalogScanner>());
+        scanners.push_back(std::make_unique<PersistenceScanner>());
 
-    enumerateInstalledApplications(builder);
-    enumerateUwpPackages(builder);
+        std::vector<RawSoftwareEntry> rawEntries;
+        for (const auto& scanner : scanners) {
+            auto entries = scanner->scan();
+            rawEntries.insert(rawEntries.end(), entries.begin(), entries.end());
+        }
 
-    PortableScanner scanner;
-    scanner.scan(builder);
+        const Normalizer normalizer;
+        const auto normalizedEntries = normalizer.normalizeAll(rawEntries);
 
-    if (builder.writeToFile("inventory.json")) {
-        std::cout << "Inventory written to inventory.json\n";
-    } else {
-        std::cerr << "Failed to write inventory file\n";
+        const JsonExporter exporter;
+        exporter.exportToFile(normalizedEntries, "inventory.json");
+
+        std::cout << "Inventory complete. Wrote " << normalizedEntries.size()
+                  << " normalized entries to inventory.json\n";
+        return 0;
+    } catch (const std::exception& ex) {
+        std::cerr << "Inventory failed: " << ex.what() << '\n';
+        return 1;
     }
-
-    return 0;
 }
