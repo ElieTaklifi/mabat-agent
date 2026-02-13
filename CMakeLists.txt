@@ -7,12 +7,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(windows_agent
     src/main.cpp
-    src/inventory.cpp
-    src/json_builder.cpp
-    src/portable_scanner.cpp
-    src/uwp_scanner.cpp
+    src/registry_scanner.cpp
+    src/filesystem_scanner.cpp
+    src/os_catalog_scanner.cpp
+    src/persistence_scanner.cpp
+    src/normalizer.cpp
+    src/json_exporter.cpp
 )
 
-target_link_libraries(windows_agent
-    user32
-)
+if (WIN32)
+    target_link_libraries(windows_agent PRIVATE user32)
+endif()
