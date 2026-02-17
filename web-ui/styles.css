@@ -501,3 +501,234 @@ tbody td {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ════════════════════════════════════════════
+   Query Builder
+════════════════════════════════════════════ */
+
+.qb-shell {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+.qb-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.qb-toolbar-left  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.qb-toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+.qb-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* AND / OR pill toggle */
+.qb-logic-toggle {
+  display: flex;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+.qbl-opt {
+  padding: 3px 10px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--muted);
+  transition: background .15s, color .15s;
+}
+.qbl-opt.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.qb-match-label {
+  font-size: .72rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Toolbar buttons */
+.qb-btn-ghost {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  border-radius: 7px;
+  font-family: 'Syne', sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.qb-btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+
+.qb-btn-add {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 14px;
+  background: rgba(59,130,246,.15);
+  border: 1px solid rgba(59,130,246,.3);
+  color: var(--accent2);
+  border-radius: 7px;
+  font-family: 'Syne', sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.qb-btn-add:hover {
+  background: rgba(59,130,246,.25);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(59,130,246,.2);
+}
+
+/* ── Rules list ── */
+.qb-rules {
+  display: flex;
+  flex-direction: column;
+}
+.qb-rules:empty { display: none; }
+
+.qb-rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(26,45,74,.5);
+  animation: ruleIn .18s ease;
+  flex-wrap: wrap;
+}
+@keyframes ruleIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.qb-rule:last-child { border-bottom: none; }
+
+/* Logic connector badge (AND / OR) shown between rules */
+.qb-connector {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--accent2);
+  background: rgba(59,130,246,.1);
+  border: 1px solid rgba(59,130,246,.2);
+  border-radius: 4px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+
+/* Field / operator / value selects & inputs inside a rule */
+.qb-select,
+.qb-input {
+  background: var(--bg2, #0c1220);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-family: 'Syne', sans-serif;
+  font-size: .78rem;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  height: 34px;
+}
+.qb-select:focus,
+.qb-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+}
+.qb-select.field    { min-width: 130px; }
+.qb-select.operator { min-width: 140px; }
+.qb-input.value     { min-width: 180px; flex: 1; }
+
+/* Value select for enum fields */
+.qb-select.value-enum { min-width: 160px; flex: 1; }
+
+/* Remove rule button */
+.qb-rule-remove {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s, color .15s;
+  margin-left: auto;
+}
+.qb-rule-remove:hover {
+  background: var(--high-bg);
+  border-color: rgba(244,63,94,.3);
+  color: var(--high);
+}
+
+/* ── Empty state inside rules ── */
+.qb-empty-hint {
+  padding: 18px 16px;
+  font-size: .78rem;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.qb-empty-hint svg { opacity: .4; flex-shrink: 0; }
+
+/* ── Result chips summary ── */
+.qb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  min-height: 44px;
+  align-items: center;
+}
+.qb-chips:empty { display: none; }
+
+.qb-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px 3px 8px;
+  background: rgba(59,130,246,.1);
+  border: 1px solid rgba(59,130,246,.2);
+  border-radius: 999px;
+  font-size: .72rem;
+  color: var(--accent2);
+  cursor: default;
+  user-select: none;
+}
+.qb-chip-field  { font-weight: 700; }
+.qb-chip-op     { color: var(--muted); font-style: italic; }
+.qb-chip-val    { color: var(--text); }
+.qb-chip-remove {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); line-height: 1; padding: 0;
+  font-size: .9rem;
+  transition: color .12s;
+}
+.qb-chip-remove:hover { color: var(--high); }
+
+.qb-result-badge {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.qb-result-badge strong { color: var(--accent2); }

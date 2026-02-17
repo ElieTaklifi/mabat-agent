@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Execution Surface Security Dashboard</title>
+  <title>MABAT Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
@@ -18,7 +18,7 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
     </svg>
-    <h1>Surface Scanner</h1>
+    <h1>MABAT Scanner</h1>
   </div>
   <div class="topbar-sep"></div>
   <div class="topbar-status">
@@ -114,37 +114,38 @@
   <!-- ── Inventory View ── -->
   <div class="view" id="view-inventory">
 
-    <!-- Filter controls -->
-    <div class="controls-bar">
-      <div class="ctrl-group">
-        <label for="searchInput">Search</label>
-        <input id="searchInput" type="text" placeholder="Name, publisher, path, metadata…" />
+    <!-- ══ Query Builder ══ -->
+    <div class="qb-shell" id="queryBuilder">
+
+      <!-- Toolbar row -->
+      <div class="qb-toolbar">
+        <div class="qb-toolbar-left">
+          <span class="qb-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filter
+          </span>
+          <!-- AND / OR toggle -->
+          <div class="qb-logic-toggle" id="logicToggle" title="Switch between AND / OR logic">
+            <span class="qbl-opt active" data-logic="and">AND</span>
+            <span class="qbl-opt" data-logic="or">OR</span>
+          </div>
+          <span class="qb-match-label" id="matchLabel">All conditions must match</span>
+        </div>
+        <div class="qb-toolbar-right">
+          <button class="qb-btn-ghost" id="qbClearAll" title="Remove all rules">Clear all</button>
+          <button class="qb-btn-add" id="qbAddRule">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add rule
+          </button>
+        </div>
       </div>
-      <div class="ctrl-group">
-        <label for="typeFilter">Type</label>
-        <select id="typeFilter"><option value="all">All Types</option></select>
-      </div>
-      <div class="ctrl-group">
-        <label for="sourceFilter">Source</label>
-        <select id="sourceFilter"><option value="all">All Sources</option></select>
-      </div>
-      <div class="ctrl-group">
-        <label for="scopeFilter">Scope</label>
-        <select id="scopeFilter"><option value="all">All Scopes</option></select>
-      </div>
-      <div class="ctrl-group">
-        <label for="publisherFilter">Publisher</label>
-        <select id="publisherFilter"><option value="all">All Publishers</option></select>
-      </div>
-      <div class="ctrl-group">
-        <label for="riskFilter">Risk</label>
-        <select id="riskFilter">
-          <option value="all">All Risks</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-      </div>
+
+      <!-- Rules list -->
+      <div class="qb-rules" id="qbRules"></div>
+
+      <!-- Active filter summary chips -->
+      <div class="qb-chips" id="qbChips"></div>
+
     </div>
 
     <!-- Inventory table -->

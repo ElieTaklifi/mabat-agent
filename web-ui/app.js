@@ -4,7 +4,7 @@
 
 const state = { entries: [], filtered: [] };
 
-/* ── Fallback demo data (used when no JSON is loaded) ── */
+/* ── Fallback demo data ── */
 const fallbackData = {
   entries: [
     {
@@ -80,10 +80,51 @@ const fallbackData = {
   ]
 };
 
+/* ══════════════════════════════════════════════════════════
+   QUERY BUILDER — field definitions
+   Each field:
+     key     → unique id used in rule objects
+     label   → human-readable display name
+     get(e)  → extracts the comparable string from an entry
+     type    → "text" (free input) | "enum" (dropdown)
+     options → static option list for enum (null = built from data)
+══════════════════════════════════════════════════════════ */
+const QB_FIELDS = [
+  { key: 'name',      label: 'Name',      get: e => e.name || '',                                              type: 'text' },
+  { key: 'publisher', label: 'Publisher', get: e => e.metadata?.publisher || e.rawMetadata?.publisher || '',   type: 'text' },
+  { key: 'type',      label: 'Type',      get: e => e.type || '',                                              type: 'enum', options: null },
+  { key: 'source',    label: 'Source',    get: e => e.source || '',                                            type: 'enum', options: null },
+  { key: 'scope',     label: 'Scope',     get: e => e.scope || '',                                             type: 'enum', options: ['per-machine', 'per-user'] },
+  { key: 'risk',      label: 'Risk',      get: e => computeRisk(e),                                            type: 'enum', options: ['high', 'medium', 'low'] },
+  { key: 'path',      label: 'Path',      get: e => e.metadata?.path || '',                                    type: 'text' },
+  { key: 'version',   label: 'Version',   get: e => e.metadata?.displayVersion || '',                          type: 'text' },
+  { key: 'userSID',   label: 'User SID',  get: e => e.userSID || '',                                           type: 'text' },
+];
+
+/* Operators available per field type */
+const OPS_TEXT = [
+  { key: 'contains',     label: 'contains'        },
+  { key: 'not_contains', label: 'does not contain' },
+  { key: 'is',           label: 'is'               },
+  { key: 'is_not',       label: 'is not'           },
+  { key: 'starts_with',  label: 'starts with'      },
+  { key: 'ends_with',    label: 'ends with'        },
+  { key: 'is_empty',     label: 'is empty'         },
+  { key: 'is_not_empty', label: 'is not empty'     },
+];
+const OPS_ENUM = [
+  { key: 'is',     label: 'is'     },
+  { key: 'is_not', label: 'is not' },
+];
+
+/* Rule state */
+let qbRules   = [];
+let qbLogic   = 'and';
+let ruleIdSeq = 0;
+
 /* ══════════════════════════════════════════
    Helpers
 ══════════════════════════════════════════ */
-
 function computeRisk(entry) {
   const type   = (entry.type   || '').toLowerCase();
   const source = (entry.source || '').toLowerCase();
@@ -108,47 +149,233 @@ function escHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
+function fieldDef(key) {
+  return QB_FIELDS.find(f => f.key === key) || QB_FIELDS[0];
+}
+
 /* ══════════════════════════════════════════
-   Filters
+   Rule evaluation
 ══════════════════════════════════════════ */
+function evalRule(entry, rule) {
+  const fd  = fieldDef(rule.field);
+  const raw = fd.get(entry);
+  const a   = raw.toLowerCase();
+  const b   = (rule.value || '').toLowerCase();
 
-function populateFilter(select, values) {
-  const current = select.value;
-  select.innerHTML = select.options[0].outerHTML;
-  [...new Set(values.filter(Boolean))].sort().forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v; opt.textContent = v;
-    select.appendChild(opt);
-  });
-  if ([...select.options].some(o => o.value === current)) select.value = current;
+  switch (rule.op) {
+    case 'is':           return a === b;
+    case 'is_not':       return a !== b;
+    case 'contains':     return a.includes(b);
+    case 'not_contains': return !a.includes(b);
+    case 'starts_with':  return a.startsWith(b);
+    case 'ends_with':    return a.endsWith(b);
+    case 'is_empty':     return a === '';
+    case 'is_not_empty': return a !== '';
+    default:             return true;
+  }
 }
 
+/* ══════════════════════════════════════════
+   Apply filters → state.filtered
+══════════════════════════════════════════ */
 function applyFilters() {
-  const q   = document.getElementById('searchInput').value.trim().toLowerCase();
-  const typ = document.getElementById('typeFilter').value;
-  const src = document.getElementById('sourceFilter').value;
-  const sco = document.getElementById('scopeFilter').value;
-  const pub = document.getElementById('publisherFilter').value;
-  const rsk = document.getElementById('riskFilter').value;
-
-  state.filtered = state.entries.filter(entry => {
-    const risk = computeRisk(entry);
-    const blob = JSON.stringify(entry).toLowerCase();
-    if (q   && !blob.includes(q))                    return false;
-    if (typ !== 'all' && entry.type !== typ)          return false;
-    if (src !== 'all' && entry.source !== src)        return false;
-    if (sco !== 'all' && entry.scope !== sco)         return false;
-    if (pub !== 'all' && getPublisher(entry) !== pub) return false;
-    if (rsk !== 'all' && risk !== rsk)                return false;
-    return true;
+  const active = qbRules.filter(r => {
+    if (['is_empty', 'is_not_empty'].includes(r.op)) return true;
+    return (r.value || '').trim() !== '';
   });
+
+  if (!active.length) {
+    state.filtered = [...state.entries];
+  } else if (qbLogic === 'and') {
+    state.filtered = state.entries.filter(e => active.every(r => evalRule(e, r)));
+  } else {
+    state.filtered = state.entries.filter(e => active.some(r => evalRule(e, r)));
+  }
+
   renderAll();
+  renderChips(active);
 }
+
+/* ══════════════════════════════════════════
+   Enum options (static + dynamic from data)
+══════════════════════════════════════════ */
+function enumOptions(fieldKey) {
+  const fd = fieldDef(fieldKey);
+  if (fd.options) return fd.options;
+  return [...new Set(state.entries.map(e => fd.get(e)).filter(Boolean))].sort();
+}
+
+/* ══════════════════════════════════════════
+   Render rules list
+══════════════════════════════════════════ */
+function renderRules() {
+  const container = document.getElementById('qbRules');
+
+  if (!qbRules.length) {
+    container.innerHTML = `
+      <div class="qb-empty-hint">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        No filters active — all entries are shown. Click&nbsp;<strong>Add rule</strong>&nbsp;to start filtering.
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = qbRules.map((rule, idx) => {
+    const fd      = fieldDef(rule.field);
+    const ops     = fd.type === 'enum' ? OPS_ENUM : OPS_TEXT;
+    const noValue = ['is_empty', 'is_not_empty'].includes(rule.op);
+
+    const fieldOpts = QB_FIELDS.map(f =>
+      `<option value="${f.key}" ${f.key === rule.field ? 'selected' : ''}>${f.label}</option>`
+    ).join('');
+
+    const opOpts = ops.map(op =>
+      `<option value="${op.key}" ${op.key === rule.op ? 'selected' : ''}>${op.label}</option>`
+    ).join('');
+
+    let valueWidget = '';
+    if (!noValue) {
+      if (fd.type === 'enum') {
+        const opts = enumOptions(rule.field).map(v =>
+          `<option value="${v}" ${v === rule.value ? 'selected' : ''}>${v}</option>`
+        ).join('');
+        valueWidget = `
+          <select class="qb-select value-enum" data-id="${rule.id}" data-role="value">
+            <option value="">— select —</option>${opts}
+          </select>`;
+      } else {
+        valueWidget = `
+          <input class="qb-input value" type="text"
+            placeholder="value…"
+            value="${escHtml(rule.value)}"
+            data-id="${rule.id}" data-role="value" />`;
+      }
+    }
+
+    const connector = idx > 0
+      ? `<span class="qb-connector">${qbLogic.toUpperCase()}</span>`
+      : `<span style="width:36px;flex-shrink:0"></span>`;
+
+    return `
+      <div class="qb-rule" data-rule-id="${rule.id}">
+        ${connector}
+        <select class="qb-select field"    data-id="${rule.id}" data-role="field">${fieldOpts}</select>
+        <select class="qb-select operator" data-id="${rule.id}" data-role="op">${opOpts}</select>
+        ${valueWidget}
+        <button class="qb-rule-remove" data-id="${rule.id}" title="Remove rule">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>`;
+  }).join('');
+
+  /* Event delegation */
+  container.querySelectorAll('[data-role]').forEach(el => {
+    el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', handleRuleChange);
+  });
+  container.querySelectorAll('.qb-rule-remove').forEach(btn => {
+    btn.addEventListener('click', () => removeRule(btn.dataset.id));
+  });
+}
+
+/* Handle a change inside any rule control */
+function handleRuleChange(ev) {
+  const id   = ev.target.dataset.id;
+  const role = ev.target.dataset.role;
+  const rule = qbRules.find(r => String(r.id) === id);
+  if (!rule) return;
+
+  if (role === 'field') {
+    rule.field = ev.target.value;
+    const fd   = fieldDef(rule.field);
+    rule.op    = fd.type === 'enum' ? 'is' : 'contains';
+    rule.value = '';
+    renderRules();
+  } else if (role === 'op') {
+    rule.op = ev.target.value;
+    renderRules();
+  } else {
+    rule.value = ev.target.value;
+  }
+
+  applyFilters();
+}
+
+/* ── Add / remove ── */
+function addRule() {
+  qbRules.push({ id: ++ruleIdSeq, field: 'name', op: 'contains', value: '' });
+  renderRules();
+  const inputs = document.querySelectorAll('#qbRules .qb-input.value');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeRule(id) {
+  qbRules = qbRules.filter(r => String(r.id) !== id);
+  renderRules();
+  applyFilters();
+}
+
+/* ══════════════════════════════════════════
+   Chips — active filter summary bar
+══════════════════════════════════════════ */
+function renderChips(active) {
+  const container = document.getElementById('qbChips');
+  if (!active.length) { container.innerHTML = ''; return; }
+
+  const allOps = [...OPS_TEXT, ...OPS_ENUM];
+  const chips = active.map(r => {
+    const fd      = fieldDef(r.field);
+    const opLabel = allOps.find(o => o.key === r.op)?.label || r.op;
+    const valPart = ['is_empty', 'is_not_empty'].includes(r.op)
+      ? '' : `<span class="qb-chip-val">${escHtml(r.value)}</span>`;
+    return `
+      <span class="qb-chip">
+        <span class="qb-chip-field">${fd.label}</span>
+        <span class="qb-chip-op">${opLabel}</span>
+        ${valPart}
+        <button class="qb-chip-remove" data-id="${r.id}" title="Remove">×</button>
+      </span>`;
+  }).join('');
+
+  const badge = `<span class="qb-result-badge">
+    <strong>${state.filtered.length}</strong> / ${state.entries.length} entries
+  </span>`;
+
+  container.innerHTML = chips + badge;
+  container.querySelectorAll('.qb-chip-remove').forEach(btn => {
+    btn.addEventListener('click', () => removeRule(btn.dataset.id));
+  });
+}
+
+/* ══════════════════════════════════════════
+   AND / OR toggle
+══════════════════════════════════════════ */
+document.getElementById('logicToggle').addEventListener('click', (ev) => {
+  const opt = ev.target.closest('.qbl-opt');
+  if (!opt) return;
+  qbLogic = opt.dataset.logic;
+  document.querySelectorAll('.qbl-opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.logic === qbLogic)
+  );
+  document.getElementById('matchLabel').textContent =
+    qbLogic === 'and' ? 'All conditions must match' : 'Any condition must match';
+  renderRules();
+  applyFilters();
+});
+
+document.getElementById('qbAddRule').addEventListener('click', addRule);
+document.getElementById('qbClearAll').addEventListener('click', () => {
+  qbRules = [];
+  renderRules();
+  applyFilters();
+});
 
 /* ══════════════════════════════════════════
    Render — Stat Cards
 ══════════════════════════════════════════ */
-
 function renderCards() {
   const byRisk = { high: 0, medium: 0, low: 0 };
   state.filtered.forEach(e => byRisk[computeRisk(e)]++);
@@ -170,12 +397,11 @@ function renderCards() {
 /* ══════════════════════════════════════════
    Render — Donut Chart
 ══════════════════════════════════════════ */
-
 function renderDonut() {
   const total  = state.filtered.length || 1;
   const byRisk = { high: 0, medium: 0, low: 0 };
   state.filtered.forEach(e => byRisk[computeRisk(e)]++);
-  const circ = 2 * Math.PI * 50; // circumference for r=50
+  const circ = 2 * Math.PI * 50;
 
   let offset = 0;
   const segments = [
@@ -204,7 +430,6 @@ function renderDonut() {
 /* ══════════════════════════════════════════
    Render — Risk Breakdown Bars
 ══════════════════════════════════════════ */
-
 function renderRiskBars() {
   const total  = Math.max(state.filtered.length, 1);
   const byRisk = { high: 0, medium: 0, low: 0 };
@@ -233,7 +458,6 @@ function renderRiskBars() {
 /* ══════════════════════════════════════════
    Render — Source Breakdown
 ══════════════════════════════════════════ */
-
 function renderSourceBars() {
   const counts = {};
   state.filtered.forEach(e => {
@@ -257,7 +481,6 @@ function renderSourceBars() {
 /* ══════════════════════════════════════════
    Render — Top Publishers
 ══════════════════════════════════════════ */
-
 function renderPublishers() {
   const counts = {};
   state.filtered.forEach(e => {
@@ -280,7 +503,6 @@ function renderPublishers() {
 /* ══════════════════════════════════════════
    Render — Inventory Table
 ══════════════════════════════════════════ */
-
 function renderTable() {
   const tbody = document.getElementById('entriesBody');
   const empty = document.getElementById('emptyState');
@@ -327,7 +549,6 @@ function renderTable() {
 /* ══════════════════════════════════════════
    Status bar + tab counter
 ══════════════════════════════════════════ */
-
 function updateStatus() {
   document.getElementById('statusText').textContent =
     `${state.entries.length} entries loaded · ${state.filtered.length} shown`;
@@ -337,7 +558,6 @@ function updateStatus() {
 /* ══════════════════════════════════════════
    Render all panels
 ══════════════════════════════════════════ */
-
 function renderAll() {
   renderCards();
   renderDonut();
@@ -351,18 +571,13 @@ function renderAll() {
 /* ══════════════════════════════════════════
    Data loading
 ══════════════════════════════════════════ */
-
 function setData(json) {
   state.entries = Array.isArray(json.entries) ? json.entries : [];
-  const publishers = state.entries.map(e => getPublisher(e)).filter(Boolean);
-  populateFilter(document.getElementById('typeFilter'),      state.entries.map(e => e.type));
-  populateFilter(document.getElementById('sourceFilter'),    state.entries.map(e => e.source));
-  populateFilter(document.getElementById('scopeFilter'),     state.entries.map(e => e.scope));
-  populateFilter(document.getElementById('publisherFilter'), publishers);
+  qbRules = [];
+  renderRules();
   applyFilters();
 }
 
-/* ── File picker ── */
 document.getElementById('jsonFile').addEventListener('change', async (ev) => {
   const file = ev.target.files?.[0];
   if (!file) return;
@@ -372,10 +587,6 @@ document.getElementById('jsonFile').addEventListener('change', async (ev) => {
     alert('Invalid JSON file.');
   }
 });
-
-/* ── Filter listeners ── */
-['searchInput', 'typeFilter', 'sourceFilter', 'scopeFilter', 'publisherFilter', 'riskFilter']
-  .forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
 
 /* ── Tab switching ── */
 document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -390,7 +601,6 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
 /* ══════════════════════════════════════════
    Uninstall modal
 ══════════════════════════════════════════ */
-
 let pendingUninstall = null;
 
 function openModal(btn) {
@@ -429,5 +639,6 @@ document.getElementById('modalConfirm').addEventListener('click', () => {
   pendingUninstall = null;
 });
 
-/* ── Init with demo data ── */
+/* ── Init ── */
+renderRules();
 setData(fallbackData);
