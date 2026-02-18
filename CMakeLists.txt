@@ -7,12 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(windows_agent
     src/main.cpp
-    src/registry_scanner.cpp
-    src/filesystem_scanner.cpp
-    src/os_catalog_scanner.cpp
-    src/persistence_scanner.cpp
-    src/normalizer.cpp
-    src/json_exporter.cpp
+    src/scanners/registry_scanner.cpp
+    src/scanners/autorun_scanner.cpp
+    src/scanners/filesystem_scanner.cpp
+    src/scanners/os_catalog_scanner.cpp
+    src/scanners/persistence_scanner.cpp
+    src/helper/normalizer.cpp
+    src/helper/json_exporter.cpp
 )
 
 if (WIN32)

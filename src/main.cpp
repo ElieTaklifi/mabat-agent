@@ -3,18 +3,23 @@
 #include <memory>
 #include <vector>
 
-#include "filesystem_scanner.h"
-#include "idiscovery_scanner.h"
-#include "json_exporter.h"
-#include "normalizer.h"
-#include "os_catalog_scanner.h"
-#include "persistence_scanner.h"
-#include "registry_scanner.h"
+
+
+#include "helper/json_exporter.h"
+#include "helper/normalizer.h"
+
+#include "scanners/idiscovery_scanner.h"
+#include "scanners/registry_scanner.h"
+#include "scanners/autorun_scanner.h"
+#include "scanners/filesystem_scanner.h"
+#include "scanners/os_catalog_scanner.h"
+#include "scanners/persistence_scanner.h"
 
 int main() {
     try {
         std::vector<std::unique_ptr<IDiscoveryScanner>> scanners;
         scanners.push_back(std::make_unique<RegistryScanner>());
+        scanners.push_back(std::make_unique<AutoRunScanner>());
         //scanners.push_back(std::make_unique<FilesystemScanner>());
         //scanners.push_back(std::make_unique<OSCatalogScanner>());
         //scanners.push_back(std::make_unique<PersistenceScanner>());

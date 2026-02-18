@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "software_entry.h"
+#include "../software_entry.h"
 
 class Normalizer {
 public:

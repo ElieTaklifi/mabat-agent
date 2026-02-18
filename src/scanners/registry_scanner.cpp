@@ -239,7 +239,7 @@ std::vector<RawSoftwareEntry> RegistryScanner::scan() {
 /*
  ════════════════════════════════════════════════════════════════
   OFFLINE USER HIVES  (not implemented above — needs privileges)
- ════════════════════════════════════════════════════════════════
+ ════════════════════════════════════════════════════════════════ 
   Users who are NOT currently logged in won't have a hive loaded
   under HKU.  To scan them you must:
 
