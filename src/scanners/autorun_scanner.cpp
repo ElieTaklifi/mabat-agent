@@ -11,7 +11,10 @@
 
 #pragma comment(lib, "advapi32.lib")
 
-
+// ════════════════════════════════════════════════════════════════
+//  Internal helpers — anonymous namespace, not exported.
+//  Mirrors the structure of registry_scanner.cpp throughout.
+// ════════════════════════════════════════════════════════════════
 namespace {
 
 // ── Registry read helpers ─────────────────────────────────────
@@ -96,7 +99,7 @@ RawSoftwareEntry makeAutorунEntry(
     // path  — the raw command line / DLL path stored in the value
     entry.name   = valueName.empty() ? rawValue : valueName;
     entry.path   = rawValue;
-    entry.source = "AutoRun Registry";
+    entry.source = "persistence";
 
     // rawMetadata keys match the dashboard query-builder field names
     // and mirror the naming convention in registry_scanner.cpp
