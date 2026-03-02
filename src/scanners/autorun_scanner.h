@@ -2,7 +2,13 @@
 
 #include "idiscovery_scanner.h"
 
-class AutoRunScanner final : public IDiscoveryScanner {
+namespace AutorunMechanism {
+    constexpr const char* RunKey        = "run_key";
+    constexpr const char* RunOnceKey    = "run_once_key";
+    constexpr const char* WinlogonValue = "winlogon_value";
+}
+
+class AutorunScanner final : public IDiscoveryScanner {
 public:
     std::vector<RawSoftwareEntry> scan() override;
 };
