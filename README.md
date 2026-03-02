@@ -80,9 +80,19 @@ mabat-agent/
   Enumerates AppX/UWP package entries from the Windows AppxAllUserStore registry catalog.
 
 - **PersistenceScanner**  
-  Enumerates selected persistence surfaces (Run keys and Startup folder artifacts).
+  Enumerates selected persistence surfaces (Run keys, Winlogon values, and Startup folder artifacts).
 
-> Note: The current `main.cpp` scan pipeline enables `RegistryScanner` and `AutoRunScanner` by default; additional scanners are present in the codebase and can be enabled in the scanner list.
+> Current default pipeline: `RegistryScanner`, `AutorunScanner`, `FilesystemScanner`, `OSCatalogScanner`, and `PersistenceScanner` are all enabled in `main.cpp` and contribute to `inventory.json`.
+
+### Output Highlights (New)
+
+Each normalized entry now carries richer security context for triage in downstream tooling and in the web dashboard:
+
+- `severity` (for example: `critical`, `high`, `medium`, `low`)
+- `severityReasons` (human-readable reason string)
+- `explanation` (source-focused collection explanation)
+
+These fields are generated from scanner metadata and persisted in exported JSON so analysts can quickly prioritize findings.
 
 ---
 
@@ -119,6 +129,11 @@ start .\web-ui\index.html
 ```
 
 Then load `inventory.json` from the page.
+
+The current dashboard includes:
+- Multi-tab analyst views (`Dashboard`, `All Entries`, `Registry`, `Autoruns`, `Services`, `Filesystem`)
+- Per-tab query builder filters with AND/OR logic
+- Severity distribution and top findings widgets
 
 ---
 

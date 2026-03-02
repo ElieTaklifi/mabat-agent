@@ -1,6 +1,6 @@
 # Execution Surface Security Dashboard
 
-A standalone, zero-dependency browser UI for visualising software inventory data produced by the Windows endpoint scanner agent.
+A standalone, zero-dependency browser UI for visualising software and execution-surface inventory data produced by the MABAT agent.
 
 ## File Structure
 
@@ -18,6 +18,7 @@ web-ui/
    No web server required — all assets are local.
 2. Click **Load inventory.json** in the top-right and select an exported inventory file from the agent.
 3. The dashboard populates automatically with demo data until a real file is loaded.
+4. Use the dedicated analyst tabs (`Registry`, `Autoruns`, `Services`, `Filesystem`) for source-specific triage.
 
 ## Views
 
@@ -31,29 +32,12 @@ web-ui/
 | Top Publishers | Ranked leaderboard of software publishers |
 
 ### Inventory tab
-Full filterable, searchable table of every discovered surface.
+Full filterable table of every discovered surface with query-builder filters (AND/OR logic).
 
-**Filters available:** Type · Source · Scope · Publisher · Risk level · Free-text search
+**Key fields:** Severity · Name · Type · Source · Scope · Publisher · Version · Path · Why flagged · Explanation
 
-**Columns:** Name · Type · Source · Scope · Publisher · Risk · Path · Action (Uninstall)
 
-## Uninstall Action
-
-Rows that contain a `metadata.uninstallCmd` value show an **Uninstall** button.  
-Clicking it opens a confirmation modal before proceeding.
-
-To wire this up to a real agent endpoint, replace the placeholder in `app.js`:
-
-```js
-// Inside the modalConfirm click handler in app.js:
-await fetch('http://localhost:PORT/api/uninstall', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(pendingUninstall)   // { name, cmd }
-});
-```
-
-## inventory.json Format
+## inventory.json Format (updated)
 
 The dashboard expects a JSON object with an `entries` array.  
 Each entry should conform to the following shape:
@@ -67,32 +51,32 @@ Each entry should conform to the following shape:
       "source":  "registry",        // registry | registry-msi | persistence | os_catalog | filesystem
       "scope":   "per-machine",     // per-machine | per-user
       "userSID": "S-1-5-21-…",     // or "N/A" for machine-wide installs
+      "severity": "medium",
+      "severityReasons": "No publisher recorded; No install date",
+      "explanation": "Found in uninstall registry keys.",
       "metadata": {
         "path":           "C:/Program Files/MyApp",
         "publisher":      "Acme Corp",
         "displayVersion": "2.1.0",
-        "uninstallCmd":   "MsiExec.exe /X{GUID}",  // optional — enables Uninstall button
         "registryPath":   "…\\Uninstall\\MyApp",
-        "mechanism":      "run_key"                // present on persistence sources
+        "mechanism":      "run_key"
       }
     }
   ]
 }
 ```
 
-## Risk Scoring
+## Severity Model
 
-Risk is computed client-side in `app.js → computeRisk()`:
+The dashboard primarily consumes the severity fields provided by `inventory.json` (`severity`, `severityReasons`, and optional metadata hints).
 
-| Condition | Risk |
-|---|---|
-| `source === "persistence"` or `mechanism === "run_key"` | **High** |
-| `type === "Service"` or `type === "Driver"` | **High** |
-| `source === "filesystem"` and path contains `temp` | **High** |
-| `source === "registry"` or `type === "Win32"` | **Medium** |
-| Everything else | **Low** |
+Default visual tiers used across widgets and tables:
+- `critical`
+- `high`
+- `medium`
+- `low`
 
-Adjust the function in `app.js` to match your organisation's risk policy.
+If severity fields are missing, fallback behavior in the UI logic applies source/type heuristics.
 
 ## Design
 
