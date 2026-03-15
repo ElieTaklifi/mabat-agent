@@ -12,15 +12,17 @@
 #include "scanners/filesystem_scanner.h"
 #include "scanners/os_catalog_scanner.h"
 #include "scanners/persistence_scanner.h"
+#include "scanners/service_scanner.h"
 
 int main() {
     try {
         std::vector<std::unique_ptr<IDiscoveryScanner>> scanners;
         scanners.push_back(std::make_unique<RegistryScanner>());
         scanners.push_back(std::make_unique<AutorunScanner>());
-        //scanners.push_back(std::make_unique<FilesystemScanner>());
+        scanners.push_back(std::make_unique<FilesystemScanner>());
         scanners.push_back(std::make_unique<OSCatalogScanner>());
         scanners.push_back(std::make_unique<PersistenceScanner>());
+        scanners.push_back(std::make_unique<ServiceScanner>());
 
         std::vector<RawSoftwareEntry> rawEntries;
         for (const auto& scanner : scanners) {

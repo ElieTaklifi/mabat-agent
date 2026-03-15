@@ -1,5 +1,39 @@
 #pragma once
 
+#include "idiscovery_scanner.h"
+
+// String constants written into rawMetadata["serviceType"].
+// Used by the normalizer and dashboard without re-parsing DWORDs.
+namespace ServiceType {
+    constexpr const char* KernelDriver      = "KernelDriver";
+    constexpr const char* FilesystemDriver  = "FilesystemDriver";
+    constexpr const char* OwnProcess        = "OwnProcess";
+    constexpr const char* SharedProcess     = "SharedProcess";
+}
+
+// String constants written into rawMetadata["startType"].
+namespace StartType {
+    constexpr const char* Boot     = "Boot";
+    constexpr const char* System   = "System";
+    constexpr const char* Auto     = "Auto";
+    constexpr const char* Demand   = "Demand";
+    constexpr const char* Disabled = "Disabled";
+}
+
+// String constants written into rawMetadata["failureActions"].
+namespace FailureAction {
+    constexpr const char* Restart    = "restart";
+    constexpr const char* Reboot     = "reboot";
+    constexpr const char* RunProgram = "run_program";
+    constexpr const char* None       = "none";
+}
+
+class ServiceScanner final : public IDiscoveryScanner {
+public:
+    std::vector<RawSoftwareEntry> scan() override;
+};
+
+
 // ════════════════════════════════════════════════════════════════
 //  service_scanner.h
 //
@@ -54,36 +88,3 @@
 //  Scope is always "per-machine" for this source.
 //  No changes to JsonExporter are required.
 // ════════════════════════════════════════════════════════════════
-
-#include "idiscovery_scanner.h"
-
-// String constants written into rawMetadata["serviceType"].
-// Used by the normalizer and dashboard without re-parsing DWORDs.
-namespace ServiceType {
-    constexpr const char* KernelDriver      = "KernelDriver";
-    constexpr const char* FilesystemDriver  = "FilesystemDriver";
-    constexpr const char* OwnProcess        = "OwnProcess";
-    constexpr const char* SharedProcess     = "SharedProcess";
-}
-
-// String constants written into rawMetadata["startType"].
-namespace StartType {
-    constexpr const char* Boot     = "Boot";
-    constexpr const char* System   = "System";
-    constexpr const char* Auto     = "Auto";
-    constexpr const char* Demand   = "Demand";
-    constexpr const char* Disabled = "Disabled";
-}
-
-// String constants written into rawMetadata["failureActions"].
-namespace FailureAction {
-    constexpr const char* Restart    = "restart";
-    constexpr const char* Reboot     = "reboot";
-    constexpr const char* RunProgram = "run_program";
-    constexpr const char* None       = "none";
-}
-
-class ServiceScanner final : public IDiscoveryScanner {
-public:
-    std::vector<RawSoftwareEntry> scan() override;
-};
