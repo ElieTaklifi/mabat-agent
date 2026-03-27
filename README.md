@@ -127,6 +127,11 @@ You can inspect exported results with the local UI:
 ```powershell
 start .\web-ui\index.html
 ```
+or
+
+```powershell
+python3 -m http.server 8080
+```
 
 Then load `inventory.json` from the page.
 
